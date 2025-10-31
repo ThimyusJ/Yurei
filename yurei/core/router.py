@@ -1,17 +1,56 @@
 from rich.console import Console
-from yurei.core import executor
+from .intents import parse_intent
+from .dialog import DialogManager
 from yurei.plugins import nmap_plugin
 
 console = Console()
+dm = DialogManager()
 
-def route(intent: str, user_input: str):
-    #Route user input to the appropriate action or plugin
+def route(intent_payload: dict, user_input: str, session_id: str = "local"):
+    missing = intent_payload.get("missing", [])
+    if missing:
+        slot = missing[0]
+        if slot == "target":
+            dm.require_slot(session_id, intent_payload, "target", "Which target would you like to scan? (IP/CIDR/hostname)")
+            return
+        if slot == "ports":
+            dm.require_slot(session_id, intent_payload, "ports", "Which ports or range? e.g. '22,80' or '1-1024'")
+            return
+
+    intent = intent_payload["intent"]
+    slots = intent_payload["slots"]
+    target = slots.get("target", "127.0.0.1")
+    ports = slots.get("ports")
+
     if intent == "nmap_scan":
-        nmap_plugin.run_scan(user_input)
-        nmap_plugin.verbose_scan(user_input)
-    elif intent == "udp_scan":
-        nmap_plugin.udp_scan(user_input)
-    elif intent == "ping":
-        executor.run_command("ping -c 4 8.8.8.8")
-    else:
-        console.print(f"[bold yellow]Unknown intent:[/bold yellow] {intent}")
+        if ports:
+            nmap_plugin.run_scan(f"{target} -p {ports}")
+        else:
+            nmap_plugin.run_scan(target)
+        if slots.get("verbose"):
+            nmap_plugin.verbose_scan(target)
+        return
+
+    if intent == "udp_scan":
+        nmap_plugin.udp_scan(f"{target} {ports or '1-1024'}")
+        return
+
+    if intent == "http_enum":
+        nmap_plugin.http_enum(target)
+        return
+
+    if intent == "smb_enum":
+        nmap_plugin.smb_enum(target)
+        return
+
+    if intent == "vuln_scan":
+        nmap_plugin.vuln_script_scan(target)
+        return
+
+    if intent == "ping":
+        nmap_plugin.host_discovery(target)
+        return
+
+    console.print(f"[yellow]Unknown intent:[/yellow] {intent}")
+
+
