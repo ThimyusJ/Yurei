@@ -4,6 +4,8 @@ def parse_intent(user_input: str) -> str:
 
     if "scan" in lower or "nmap" in lower:
         return "nmap_scan"
+    elif "udp" in lower:
+        return "udp_scan"
     elif "ping" in lower:
         return "ping"
     else:

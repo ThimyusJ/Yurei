@@ -18,3 +18,35 @@ def run_scan(user_input: str):
         console.print(result.stdout)
     except Exception as e:
         console.print(f"[red]Error running nmap:[/red] {e}")
+
+def verbose_scan(user_input: str):
+    #Perform a verbose nmap scan
+    if shutil.which("nmap") is None:
+        console.print("[red]Error:[/red] nmap not found. Install it to use this plugin.")
+        return
+    
+    target = "127.0.0.1"
+    console.print(f"[cyan]Running verbose scan on {target}...[/cyan]")
+
+    try:
+        result = subprocess.run(["nmap", "-v", "-A", target], capture_output=True, text=True)
+        console.print(result.stdout)
+    except Exception as e:
+        console.print(f"[red]Error running nmap:[/red] {e}")
+
+
+#NEEDS FIXED----------------------------------------------------------------------------------
+def udp_scan(user_input: str):
+    #Perform a UDP scan
+    if shutil.which("nmap") is None:
+        console.print("[red]Error:[/red] nmap not found. Install it to use this plugin.")
+        return
+    
+    target = "127.0.0.1"
+    console.print(f"[cyan]Running UDP scan on {target}...[/cyan]")
+
+    try:
+        result = subprocess.run(["nmap", "-sU", target], capture_output=True, text=True)
+        console.print(result.stdout)
+    except Exception as e:
+        console.print(f"[red]Error running nmap:[/red] {e}")
