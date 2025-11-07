@@ -2,13 +2,16 @@
 import typer
 from rich.console import Console
 from yurei.core import logger
-from yurei.router.intents import parse_intent
-from yurei.router.router import route, dm
+from yurei.core.intents import parse_intent
+from yurei.core.router import route, dm
+from yurei.core.intent_engine import IntentEngine
+from yurei.core.llm.mistral_client import MistralClient
 
 app = typer.Typer(help="Yurei — modular CLI cyber assistant for Linux")
 console = Console()
 log = logger.get_logger()
 SESSION_ID = "local"
+ie = IntentEngine(nlp=MistralClient(), use_llm_first=False)
 
 @app.command()
 def start():
@@ -27,7 +30,7 @@ def start():
                     route(updated, user_input, SESSION_ID)
                 continue
 
-            payload = parse_intent(user_input)
+            payload = ie.parse(user_input)
             route(payload, user_input, SESSION_ID)
 
         except (KeyboardInterrupt, EOFError):
@@ -38,7 +41,7 @@ def start():
 
 @app.command()
 def run(command: str = typer.Argument(..., help="One-shot command, e.g. 'scan 192.168.1.0/24 top 100'")):
-    payload = parse_intent(command)
+    payload = ie.parse(command)
     # fail fast if interactive follow-ups would be needed
     if payload.get("missing"):
         console.print(f"[yellow]Missing required info:[/yellow] {payload['missing']}. Try interactive: [cyan]yurei start[/cyan].")
